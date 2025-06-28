@@ -1,53 +1,48 @@
-#include "stdbool.h"
+#include <stdbool.h>
 #include <stdint.h>
 
-enum number {
-    INTEGER,
-    FLOAT,
-    DOUBLE,
-    LONG_DOUBLE
-};
+#ifndef JSON_LIB_H
+#define JSON_LIB_H
 
-typedef struct 
+typedef enum
 {
-    enum number type;
-    union {
-        int64_t i; 
-        float f;
-        double d; 
-        long double ld;
+    JSON_TYPE_ARRAY,
+    JSON_TYPE_OBJECT,
+    JSON_TYPE_STRING,
+    JSON_TYPE_BOOLEAN,
+    JSON_TYPE_NUMBER,
+    JSON_TYPE_NULL
+} JsonType;
+
+
+struct json_value
+{
+    JsonType type;
+    union
+    {
+        struct json_object *object_value;
+        char *string_value;
+        bool bool_value;
+        double num_value;
     };
-} number_t;
-
-typedef enum {
-    JSON_TRUE,
-    JSON_FALSE,
-    JSON_NULL
-} primitive_t;
-
-enum json_types {
-    NUMBER,
-    STRING,
-    PRIMITIVE,
-    OBJECT,
-    ARRAY
 };
 
-union json_values
+struct json_object
 {
-    number_t n;
-    primitive_t p;
-    char *s;
-    json_t *next;
+    const char *key;
+    struct json_value value;
+    struct json_object *next;
 };
 
-typedef struct {
-    char *key;
-    enum json_types type;
-    union json_values value;
-} json_t;
+typedef struct json_value JsonValue;
+typedef struct json_object JsonObject;
 
 
-number_t to_number(char *s);
+JsonObject *newJsonObject(const char *key, JsonValue value);
+void JsonObjectAdd(JsonObject *parent, const char *key, JsonValue value);
+void JsonArrayAdd(JsonObject *parent, JsonValue value);
+JsonObject *newJsonArray(JsonValue value);
+// JsonValue *JsonObjectGet(JsonObject *parent, const char *key);
+void printJsonObject(JsonObject *obj);
 
-json_t create_json();
+#endif
