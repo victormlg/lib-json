@@ -5,19 +5,21 @@
 int main()
 {
     JsonElement *root = NULL;
-    int ret = ParseJsonFromString("{ \"hello\" : 1 }", &root);
+    int ret = ParseJson("input.json", &root);
 
-    if (ret == 0)
+    if (ret != 0)
     {
-        
-        FILE *f = fopen("output.json", "w");
-        Writer *w = FileWriter(f);
-
-        JsonWrite(w, root, 0);
-
-        FileWriterDetach(w);
-        fclose(f);
-
-        JsonDestroy(root);
+        return ret;
     }
+    
+    FILE *f = fopen("output.json", "w");
+    Writer *w = FileWriter(f);
+
+    JsonWrite(w, root, 0);
+
+    FileWriterDetach(w);
+    fclose(f);
+
+    JsonDestroy(root);
+    
 }
