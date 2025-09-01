@@ -1,12 +1,12 @@
 // C and parser declarations
 
 %code requires {
-    #include "jsonlib.h"
+    #include <json.h>
 }
 
 
 %{
-#include "jsonlib.h"
+#include <json.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -15,10 +15,10 @@ int yylex();
 
 struct pair {
     char *key;
-    JsonValue value;
+    JsonElement value;
 };
 
-struct pair *newPair(char *key, JsonValue value)
+struct pair *newPair(char *key, JsonElement value)
 {
     struct pair *p = (struct pair *) malloc(sizeof(struct pair));
     p->key = key;
@@ -28,78 +28,64 @@ struct pair *newPair(char *key, JsonValue value)
 %}
 
 %union {
-    double num;
     char *string;
-    JsonValue value;
     struct pair *pair;
-    JsonObject *object;
+    JsonElement *element;
 }
 
 /* Bison declarations. */
 %define parse.error verbose
 
-%token <num> NUM
+%token <string> NUM
 %token <string> STR
 %token JSON_NULL JSON_TRUE JSON_FALSE
 
-%type <value> value element
+%type <element> value element object array members elements
 %type <pair> member
-%type <object> object array members elements
 
 %% /* Grammar rules and actions follow. */
 
 json:
 %empty
-| value { printf("json\n"); }
+| value
 ;
 
 object:
-'{' members '}' { $$ = $2; printf("object\n"); }
+'{' members '}' { $$ = $2; }
 ;
 
 array:
-'[' elements ']' { $$ = $2; printf("array\n"); }
+'[' elements ']' { $$ = $2; }
 ;
 
 elements:
-%empty { $$ = newJsonArray((JsonValue){0}); printf("elements:1\n");}
-| element { $$ = newJsonArray($1); printf("elements:2\n");}
-| elements ',' element { JsonArrayAdd($1, $3); printf("elements:3\n");}
+%empty { $$ = JsonObjectCreate(10); }
+| element { $$ = JsonArrayCreate(10); JsonArrayAppendElement($$, $1->value) }
+| elements ',' element { JsonArrayAppendElement($1, $3); $$ = $1; }
 ;
 
 members:
-%empty
-    { $$ = newJsonObject(NULL, (JsonValue){0}); printf("members:1\n");}
-| member
-    {
-        $$ = newJsonObject($1->key, $1->value); 
-        free($1);
-        printf("members:2\n");
-    }
-| members ',' member
-    {
-        JsonObjectAdd($1, $3->key, $3->value);
-        free($1);
-        printf("members:3\n");
-    }
+%empty { $$ = JsonObjectCreate(10); }
+| member { $$ = JsonObjectCreate(10); JsonObjectAppendElement($$, $1->key, $1->value); }
+| members ',' member { JsonObjectAppendElement($1, $3->key, $3->value); $$ = $1; }
 ;
 
 member:
-STR ':' element { $$ = newPair($1, $3); printf("member:1\n");}
+STR ':' element { $$ = newPair($1, $3); }
 ;
 
 element:
-value { printf("element\n");}
+value
 ;
 
 value:
-object { $$ = (JsonValue){ .type = JSON_TYPE_OBJECT, .object_value = $1 }; printf("val-object\n"); }
-| array { $$ = (JsonValue){ .type = JSON_TYPE_ARRAY, .object_value = $1 }; printf("val-array\n"); }
-| JSON_NULL { $$ = (JsonValue){ .type = JSON_TYPE_NULL, .object_value = NULL }; printf("val-null\n"); }
-| JSON_TRUE { $$ = (JsonValue){ .type = JSON_TYPE_BOOLEAN, .bool_value = true }; printf("val-true\n"); }
-| JSON_FALSE { $$ = (JsonValue){ .type = JSON_TYPE_BOOLEAN, .bool_value = false }; printf("val-false\n"); }
-| STR { $$ = (JsonValue){ .type = JSON_TYPE_STRING, .string_value = $1 }; printf("val-str\n"); }
-| NUM { $$ = (JsonValue){ .type = JSON_TYPE_NUMBER, .num_value = $1 }; printf("val-num\n"); }
+object { $$ = $1; }
+| array { $$ = $1; }
+| JSON_NULL { $$ = JsonNullCreate(); }
+| JSON_TRUE { $$ = JsonBoolCreate(true); }
+| JSON_FALSE { $$ = JsonBoolCreate(false); }
+| STR { $$ = JsonStringCreate($1); }
+| NUM { $$ = JsonStringCreate($1); }
 ;
 
 %%
