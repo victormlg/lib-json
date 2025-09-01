@@ -1,23 +1,11 @@
-#include <json.h>
-#include "jsonparse.tab.h"
+#include "libparsejson.h"
 #include <stdio.h>
 
-int ParseJson(const char *filename, JsonElement **root)
-{
-    extern FILE *yyin;
-    yyin = fopen("input.json", "r");
-    if (yyin == NULL) return -1;
-    int ret = yyparse(root);
-
-    fclose(yyin);
-
-    return ret;
-}
 
 int main()
 {
     JsonElement *root = NULL;
-    int ret = ParseJson("input.json", &root);
+    int ret = ParseJsonFromString("{ \"hello\" : 1 }", &root);
 
     if (ret == 0)
     {
@@ -29,5 +17,7 @@ int main()
 
         FileWriterDetach(w);
         fclose(f);
+
+        JsonDestroy(root);
     }
 }

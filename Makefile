@@ -4,7 +4,7 @@ LEX = flex
 YACC = bison
 
 # Flags
-CFLAGS = -Wall -Ilibntech/libutils
+CFLAGS = -Wall -Ilibntech/libutils -I.
 LDFLAGS =
 EXT_LIBS = -lyaml -lpcre2-8
 
@@ -22,8 +22,12 @@ PARSER_C = jsonparse.tab.c
 PARSER_H = jsonparse.tab.h
 LEX_C = lex.yy.c
 
+# Additional source
+LIBPARSEJSON_C = libparsejson.c
+LIBPARSEJSON_H = libparsejson.h
+
 # Object files
-OBJS = main.o $(PARSER_C:.c=.o) $(LEX_C:.c=.o)
+OBJS = main.o $(PARSER_C:.c=.o) $(LEX_C:.c=.o) $(LIBPARSEJSON_C:.c=.o)
 
 # Default target
 all: $(LIB) $(TARGET)
@@ -46,8 +50,12 @@ $(LEX_C): $(LEXER)
 lex.yy.o: lex.yy.c $(PARSER_H)
 	$(CC) $(CFLAGS) -c lex.yy.c
 
+# Build libparsejson.o
+$(LIBPARSEJSON_C:.c=.o): %.o: %.c $(LIBPARSEJSON_H)
+	$(CC) $(CFLAGS) -c $<
+
 # Build main program
-main.o: main.c $(PARSER_H)
+main.o: main.c $(PARSER_H) $(LIBPARSEJSON_H)
 	$(CC) $(CFLAGS) -c main.c
 
 $(TARGET): $(OBJS) $(LIB)
@@ -58,26 +66,3 @@ clean:
 	rm -f $(TARGET) $(LIB) *.o $(LEX_C) $(PARSER_C) $(PARSER_H)
 
 .PHONY: all clean
-
-
-# CC = gcc
-# CFLAGS = -Wall -Ilibntech/libutils
-# TARGET = main2
-# LIB = libntech/libntech.a
-# LIB_OBJS = $(wildcard libntech/libutils/.libs/*.o libntech/libcompat/.libs/*.o)
-
-# # External libraries required by libntech
-# EXT_LIBS = -lyaml -lpcre2-8
-
-# all: $(LIB) $(TARGET)
-
-# $(LIB): $(LIB_OBJS)
-# 	ar rcs $@ $(LIB_OBJS)
-
-# $(TARGET): main2.c $(LIB)
-# 	$(CC) $(CFLAGS) -o $@ main2.c $(LIB) $(EXT_LIBS)
-
-# clean:
-# 	rm -f $(TARGET) $(LIB)
-
-# .PHONY: all clean
