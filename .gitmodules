@@ -1,0 +1,3 @@
+[submodule "libntech"]
+	path = libntech
+	url = git@github.com:victormlg/libntech.git
